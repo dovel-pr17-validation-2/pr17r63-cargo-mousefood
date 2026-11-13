@@ -1,0 +1,45 @@
+[package]
+name = "mousefood"
+description = "embedded-graphics backend for Ratatui"
+version = "0.5.3"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+homepage.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+ratatui-core.workspace = true
+thiserror.workspace = true
+embedded-graphics.workspace = true
+embedded-graphics-unicodefonts = { workspace = true, optional = true }
+weact-studio-epd = { workspace = true, optional = true }
+epd-waveshare = { workspace = true, optional = true }
+
+[dev-dependencies]
+ratatui.workspace = true
+rstest.workspace = true
+paste.workspace = true
+
+[features]
+default = ["fonts", "framebuffer"]
+std = ["thiserror/std", "ratatui-core/std"]
+fonts = ["dep:embedded-graphics-unicodefonts"]
+epd-weact = ["dep:weact-studio-epd"]
+epd-waveshare = ["dep:epd-waveshare"]
+lilygo-epd47 = []
+monochrome = []
+framebuffer = []
+blink = []
+underline-color = ["ratatui-core/underline-color"]
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

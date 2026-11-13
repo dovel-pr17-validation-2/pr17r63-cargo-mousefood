@@ -1,0 +1,503 @@
+use crate::macros::for_all_rgb_colors;
+#[cfg(any(feature = "lilygo-epd47", feature = "monochrome"))]
+use embedded_graphics::pixelcolor::Gray4;
+use embedded_graphics::pixelcolor::{
+    Bgr555, Bgr565, Bgr666, Bgr888, BinaryColor, Rgb555, Rgb565, Rgb666, Rgb888, RgbColor,
+};
+#[cfg(feature = "monochrome")]
+use embedded_graphics::pixelcolor::{Gray2, Gray8};
+use ratatui_core::style::Color;
+
+/// Defines how ratatui colors should be mapped to the display colors.
+#[derive(Clone, Copy)]
+pub struct ColorTheme {
+    /// Default foreground color when `Color::Reset` is used.
+    pub foreground: Rgb888,
+    /// Default background color when `Color::Reset` is used.
+    pub background: Rgb888,
+    /// ANSI white mapping.
+    pub white: Rgb888,
+    /// ANSI black mapping.
+    pub black: Rgb888,
+    /// ANSI red mapping.
+    pub red: Rgb888,
+    /// ANSI green mapping.
+    pub green: Rgb888,
+    /// ANSI yellow mapping.
+    pub yellow: Rgb888,
+    /// ANSI blue mapping.
+    pub blue: Rgb888,
+    /// ANSI magenta mapping.
+    pub magenta: Rgb888,
+    /// ANSI cyan mapping.
+    pub cyan: Rgb888,
+    /// ANSI bright red mapping.
+    pub light_red: Rgb888,
+    /// ANSI bright green mapping.
+    pub light_green: Rgb888,
+    /// ANSI bright yellow mapping.
+    pub light_yellow: Rgb888,
+    /// ANSI bright blue mapping.
+    pub light_blue: Rgb888,
+    /// ANSI bright magenta mapping.
+    pub light_magenta: Rgb888,
+    /// ANSI bright cyan mapping.
+    pub light_cyan: Rgb888,
+    /// ANSI gray mapping.
+    pub gray: Rgb888,
+    /// ANSI dark gray mapping.
+    pub dark_gray: Rgb888,
+}
+
+impl Default for ColorTheme {
+    fn default() -> Self {
+        Self::ansi()
+    }
+}
+
+impl ColorTheme {
+    /// ANSI color palette used by default.
+    pub const fn ansi() -> Self {
+        Self {
+            foreground: Rgb888::WHITE,
+            background: Rgb888::BLACK,
+            white: Rgb888::WHITE,
+            black: Rgb888::BLACK,
+            red: Rgb888::RED,
+            green: Rgb888::GREEN,
+            yellow: Rgb888::YELLOW,
+            blue: Rgb888::BLUE,
+            magenta: Rgb888::MAGENTA,
+            cyan: Rgb888::CYAN,
+            light_red: Rgb888::new(Rgb888::MAX_R, Rgb888::MAX_G / 2, Rgb888::MAX_B / 2),
+            light_green: Rgb888::new(Rgb888::MAX_R / 2, Rgb888::MAX_G, Rgb888::MAX_B / 2),
+            light_yellow: Rgb888::new(Rgb888::MAX_R, Rgb888::MAX_G, Rgb888::MAX_B / 2),
+            light_blue: Rgb888::new(Rgb888::MAX_R / 2, Rgb888::MAX_G / 2, Rgb888::MAX_B),
+            light_magenta: Rgb888::new(Rgb888::MAX_R, Rgb888::MAX_G / 2, Rgb888::MAX_B),
+            light_cyan: Rgb888::new(Rgb888::MAX_R / 2, Rgb888::MAX_G, Rgb888::MAX_B),
+            gray: Rgb888::new(Rgb888::MAX_R / 2, Rgb888::MAX_G / 2, Rgb888::MAX_B / 2),
+            dark_gray: Rgb888::new(170, 170, 170),
+        }
+    }
+
+    /// Tokyo Night color theme - a popular dark theme with blue/purple tones.
+    pub const fn tokyo_night() -> Self {
+        Self {
+            foreground: Rgb888::new(0xa9, 0xb1, 0xd6), // Light blue-gray text
+            background: Rgb888::new(0x1a, 0x1b, 0x26), // Dark blue-black background
+            white: Rgb888::new(0xc0, 0xca, 0xf5),      // Light blue-white
+            black: Rgb888::new(0x41, 0x48, 0x68),      // Dark blue-gray
+            red: Rgb888::new(0xf7, 0x76, 0x8e),        // Soft red
+            green: Rgb888::new(0x73, 0xda, 0xca),      // Soft green/teal
+            yellow: Rgb888::new(0xe0, 0xaf, 0x68),     // Soft yellow/orange
+            blue: Rgb888::new(0x7a, 0xa2, 0xf7),       // Soft blue
+            magenta: Rgb888::new(0xbb, 0x9a, 0xf7),    // Soft purple
+            cyan: Rgb888::new(0x7d, 0xcf, 0xff),       // Soft cyan
+            light_red: Rgb888::new(0xf7, 0x76, 0x8e),  // Same as red
+            light_green: Rgb888::new(0x73, 0xda, 0xca), // Same as green
+            light_yellow: Rgb888::new(0xe0, 0xaf, 0x68), // Same as yellow
+            light_blue: Rgb888::new(0x7a, 0xa2, 0xf7), // Same as blue
+            light_magenta: Rgb888::new(0xbb, 0x9a, 0xf7), // Same as magenta
+            light_cyan: Rgb888::new(0x7d, 0xcf, 0xff), // Same as cyan
+            gray: Rgb888::new(0xc0, 0xca, 0xf5),       // Light blue-white
+            dark_gray: Rgb888::new(0x41, 0x48, 0x68),  // Dark blue-gray
+        }
+    }
+
+    pub(crate) fn resolve(&self, color: Color, color_type: TermColorType) -> Rgb888 {
+        match color {
+            Color::Reset => match color_type {
+                TermColorType::Foreground => self.foreground,
+                TermColorType::Background => self.background,
+            },
+            Color::White => self.white,
+            Color::Black => self.black,
+            Color::Red => self.red,
+            Color::Green => self.green,
+            Color::Yellow => self.yellow,
+            Color::Blue => self.blue,
+            Color::Magenta => self.magenta,
+            Color::Cyan => self.cyan,
+
+            Color::LightRed => self.light_red,
+            Color::LightGreen => self.light_green,
+            Color::LightYellow => self.light_yellow,
+            Color::LightBlue => self.light_blue,
+            Color::LightMagenta => self.light_magenta,
+            Color::LightCyan => self.light_cyan,
+            Color::Gray => self.gray,
+            Color::DarkGray => self.dark_gray,
+
+            Color::Rgb(r, g, b) => Rgb888::new(r, g, b),
+            Color::Indexed(index) => self.resolve_indexed(index),
+        }
+    }
+
+    /// Indexes 0-15 use the theme's ANSI colors; 16-255 use the standard xterm palette.
+    fn resolve_indexed(&self, index: u8) -> Rgb888 {
+        const ANSI: [Color; 16] = [
+            Color::Black,
+            Color::Red,
+            Color::Green,
+            Color::Yellow,
+            Color::Blue,
+            Color::Magenta,
+            Color::Cyan,
+            Color::Gray,
+            Color::DarkGray,
+            Color::LightRed,
+            Color::LightGreen,
+            Color::LightYellow,
+            Color::LightBlue,
+            Color::LightMagenta,
+            Color::LightCyan,
+            Color::White,
+        ];
+        match index {
+            0..=15 => self.resolve(ANSI[index as usize], TermColorType::Foreground),
+            16..=231 => {
+                let i = index - 16;
+                let level = |v: u8| if v == 0 { 0 } else { 55 + v * 40 };
+                Rgb888::new(level(i / 36), level((i / 6) % 6), level(i % 6))
+            }
+            232..=255 => {
+                let v = 8 + (index - 232) * 10;
+                Rgb888::new(v, v, v)
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum TermColorType {
+    Foreground,
+    Background,
+}
+
+#[derive(Clone, Copy)]
+pub struct TermColor<'a>(pub Color, pub TermColorType, pub &'a ColorTheme);
+
+impl<'a> TermColor<'a> {
+    pub fn new(color: Color, color_type: TermColorType, theme: &'a ColorTheme) -> Self {
+        Self(color, color_type, theme)
+    }
+
+    fn to_rgb888(self) -> Rgb888 {
+        self.2.resolve(self.0, self.1)
+    }
+}
+
+macro_rules! impl_from_term_color {
+    (
+        $color_type:ident
+    ) => {
+        impl<'a> From<TermColor<'a>> for $color_type {
+            fn from(color: TermColor<'a>) -> Self {
+                color.to_rgb888().into()
+            }
+        }
+    };
+}
+
+for_all_rgb_colors!(impl_from_term_color);
+
+impl<'a> From<TermColor<'a>> for BinaryColor {
+    fn from(color: TermColor<'a>) -> Self {
+        match color.to_rgb888() {
+            rgb if rgb == Rgb888::BLACK => BinaryColor::Off,
+            rgb if rgb == Rgb888::WHITE => BinaryColor::On,
+            _ => match color.1 {
+                TermColorType::Foreground => BinaryColor::On,
+                TermColorType::Background => BinaryColor::Off,
+            },
+        }
+    }
+}
+
+/// Helper function to dim a single u8 component by halving it.
+fn dim_u8(v: u8) -> u8 {
+    v >> 1
+}
+
+/// Dim the color by halving each RGB component.
+///
+/// This is a simple way to create a "darker" version
+/// of the color.
+pub fn dim_color<C>(color: C) -> C
+where
+    C: Into<Rgb888> + From<Rgb888>,
+{
+    let rgb: Rgb888 = color.into();
+    Rgb888::new(dim_u8(rgb.r()), dim_u8(rgb.g()), dim_u8(rgb.b())).into()
+}
+
+#[cfg(feature = "epd-weact")]
+impl<'a> From<TermColor<'a>> for weact_studio_epd::Color {
+    fn from(color: TermColor<'a>) -> Self {
+        BinaryColor::from(color).into()
+    }
+}
+
+#[cfg(feature = "epd-weact")]
+impl<'a> From<TermColor<'a>> for weact_studio_epd::TriColor {
+    fn from(color: TermColor<'a>) -> Self {
+        let rgb = color.to_rgb888();
+        match rgb {
+            rgb if rgb == Rgb888::WHITE => weact_studio_epd::TriColor::White,
+            rgb if rgb == Rgb888::BLACK => weact_studio_epd::TriColor::Black,
+            rgb if rgb == Rgb888::RED => weact_studio_epd::TriColor::Red,
+            _ => match color.1 {
+                TermColorType::Foreground => weact_studio_epd::TriColor::Black,
+                TermColorType::Background => weact_studio_epd::TriColor::White,
+            },
+        }
+    }
+}
+
+#[cfg(feature = "epd-waveshare")]
+impl From<TermColor<'_>> for epd_waveshare::color::Color {
+    fn from(color: TermColor) -> Self {
+        match BinaryColor::from(color) {
+            BinaryColor::Off => epd_waveshare::color::Color::Black,
+            BinaryColor::On => epd_waveshare::color::Color::White,
+        }
+    }
+}
+
+#[cfg(feature = "epd-waveshare")]
+impl From<TermColor<'_>> for epd_waveshare::color::TriColor {
+    fn from(color: TermColor) -> Self {
+        match color.0 {
+            Color::White => epd_waveshare::color::TriColor::White,
+            Color::Black => epd_waveshare::color::TriColor::Black,
+            Color::Red => epd_waveshare::color::TriColor::Chromatic,
+            _ => match color.1 {
+                TermColorType::Foreground => epd_waveshare::color::TriColor::Black,
+                TermColorType::Background => epd_waveshare::color::TriColor::White,
+            },
+        }
+    }
+}
+
+#[cfg(any(feature = "lilygo-epd47", feature = "monochrome"))]
+impl<'a> From<TermColor<'a>> for Gray4 {
+    fn from(color: TermColor<'a>) -> Self {
+        let rgb: Rgb888 = color.into();
+        rgb.into()
+    }
+}
+
+#[cfg(feature = "monochrome")]
+impl<'a> From<TermColor<'a>> for Gray2 {
+    fn from(color: TermColor<'a>) -> Self {
+        let rgb: Rgb888 = color.into();
+        rgb.into()
+    }
+}
+
+#[cfg(feature = "monochrome")]
+impl<'a> From<TermColor<'a>> for Gray8 {
+    fn from(color: TermColor<'a>) -> Self {
+        let rgb: Rgb888 = color.into();
+        rgb.into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use Color::*;
+    use TermColorType::*;
+    #[cfg(any(feature = "lilygo-epd47", feature = "monochrome"))]
+    use embedded_graphics::pixelcolor::GrayColor;
+    use paste::paste;
+    use rstest::rstest;
+
+    const TEST_THEME: ColorTheme = ColorTheme::ansi();
+
+    fn themed(color_type: TermColorType, color_from: Color) -> TermColor<'static> {
+        TermColor::new(color_from, color_type, &TEST_THEME)
+    }
+
+    #[rstest]
+    #[case(1, TEST_THEME.red)]
+    #[case(15, TEST_THEME.white)]
+    #[case(16, Rgb888::new(0, 0, 0))]
+    #[case(196, Rgb888::new(255, 0, 0))]
+    #[case(231, Rgb888::new(255, 255, 255))]
+    #[case(236, Rgb888::new(48, 48, 48))]
+    #[case(252, Rgb888::new(208, 208, 208))]
+    fn indexed_colors(#[case] index: u8, #[case] expected: Rgb888) {
+        assert_eq!(TEST_THEME.resolve(Indexed(index), Foreground), expected);
+    }
+
+    macro_rules! into_eg_color {
+        ($color_type:ident) => {
+            paste! {
+                #[rstest]
+                #[case(Foreground, Reset, $color_type::WHITE)]
+                #[case(Background, Reset, $color_type::BLACK)]
+                #[case(Foreground, White, $color_type::WHITE)]
+                #[case(Background, White, $color_type::WHITE)]
+                #[case(Foreground, Black, $color_type::BLACK)]
+                #[case(Background, Black, $color_type::BLACK)]
+                #[case(Foreground, Red, $color_type::RED)]
+                #[case(Background, Red, $color_type::RED)]
+                #[case(Foreground, Yellow, $color_type::YELLOW)]
+                #[case(Background, Yellow, $color_type::YELLOW)]
+                #[case(Foreground, Magenta, $color_type::MAGENTA)]
+                #[case(Background, Magenta, $color_type::MAGENTA)]
+                #[case(Foreground, Cyan, $color_type::CYAN)]
+                #[case(Background, Cyan, $color_type::CYAN)]
+                #[case(Foreground, LightRed, Rgb888::new(255, 127, 127).into())]
+                #[case(Background, LightRed, Rgb888::new(255, 127, 127).into())]
+                #[case(Foreground, LightGreen, Rgb888::new(127, 255, 127).into())]
+                #[case(Background, LightGreen, Rgb888::new(127, 255, 127).into())]
+                #[case(Foreground, LightYellow, Rgb888::new(255, 255, 127).into())]
+                #[case(Background, LightYellow, Rgb888::new(255, 255, 127).into())]
+                #[case(Foreground, LightBlue, Rgb888::new(127, 127, 255).into())]
+                #[case(Background, LightBlue, Rgb888::new(127, 127, 255).into())]
+                #[case(Foreground, LightMagenta, Rgb888::new(255, 127, 255).into())]
+                #[case(Background, LightMagenta, Rgb888::new(255, 127, 255).into())]
+                #[case(Foreground, LightCyan, Rgb888::new(127, 255, 255).into())]
+                #[case(Background, LightCyan, Rgb888::new(127, 255, 255).into())]
+                #[case(Foreground, Gray, Rgb888::new(127, 127, 127).into())]
+                #[case(Background, Gray, Rgb888::new(127, 127, 127).into())]
+                #[case(Foreground, DarkGray, Rgb888::new(170, 170, 170).into())]
+                #[case(Background, DarkGray, Rgb888::new(170, 170, 170).into())]
+                #[case(Foreground, Rgb(50, 100, 200), Rgb888::new(50, 100, 200).into())]
+                #[case(Background, Rgb(50, 100, 200), Rgb888::new(50, 100, 200).into())]
+                #[case(Foreground, Rgb(123, 23, 3), Rgb888::new(123, 23, 3).into())]
+                #[case(Background, Rgb(123, 23, 3), Rgb888::new(123, 23, 3).into())]
+                fn [<into_ $color_type:lower>] (
+                    #[case] color_type: TermColorType,
+                    #[case] color_from: Color,
+                    #[case] color_into: $color_type
+                ) {
+                    let output: $color_type = themed(color_type, color_from).into();
+                    assert_eq!(output, color_into);
+                }
+            }
+        };
+    }
+    for_all_rgb_colors!(into_eg_color);
+
+    #[rstest]
+    #[case(Foreground, Black, BinaryColor::Off)]
+    #[case(Background, Black, BinaryColor::Off)]
+    #[case(Foreground, White, BinaryColor::On)]
+    #[case(Background, White, BinaryColor::On)]
+    #[case(Background, Reset, BinaryColor::Off)]
+    #[case(Foreground, Reset, BinaryColor::On)]
+    fn into_binary_color(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: BinaryColor,
+    ) {
+        let output: BinaryColor = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(any(feature = "lilygo-epd47", feature = "monochrome"))]
+    #[rstest]
+    #[case(Foreground, Black, Gray4::BLACK)]
+    #[case(Background, White, Gray4::WHITE)]
+    fn into_gray4(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: Gray4,
+    ) {
+        let output: Gray4 = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "monochrome")]
+    #[rstest]
+    #[case(Foreground, Black, Gray2::BLACK)]
+    #[case(Background, White, Gray2::WHITE)]
+    fn into_gray2(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: Gray2,
+    ) {
+        let output: Gray2 = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "monochrome")]
+    #[rstest]
+    #[case(Foreground, Black, Gray8::BLACK)]
+    #[case(Background, White, Gray8::WHITE)]
+    fn into_gray8(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: Gray8,
+    ) {
+        let output: Gray8 = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-weact")]
+    #[rstest]
+    #[case(Foreground, Black, weact_studio_epd::Color::Black)]
+    #[case(Background, Black, weact_studio_epd::Color::Black)]
+    #[case(Foreground, White, weact_studio_epd::Color::White)]
+    #[case(Background, White, weact_studio_epd::Color::White)]
+    fn into_weact_color(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: weact_studio_epd::Color,
+    ) {
+        let output: weact_studio_epd::Color = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-weact")]
+    #[rstest]
+    #[case(Foreground, Black, weact_studio_epd::TriColor::Black)]
+    #[case(Background, Black, weact_studio_epd::TriColor::Black)]
+    #[case(Foreground, White, weact_studio_epd::TriColor::White)]
+    #[case(Background, White, weact_studio_epd::TriColor::White)]
+    #[case(Foreground, Red, weact_studio_epd::TriColor::Red)]
+    #[case(Background, Red, weact_studio_epd::TriColor::Red)]
+    fn into_weact_tricolor(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: weact_studio_epd::TriColor,
+    ) {
+        let output: weact_studio_epd::TriColor = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-waveshare")]
+    #[rstest]
+    #[case(Foreground, Black, epd_waveshare::color::Color::Black)]
+    #[case(Background, Black, epd_waveshare::color::Color::Black)]
+    #[case(Foreground, White, epd_waveshare::color::Color::White)]
+    #[case(Background, White, epd_waveshare::color::Color::White)]
+    fn into_waveshare_color(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: epd_waveshare::color::Color,
+    ) {
+        let output: epd_waveshare::color::Color = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+
+    #[cfg(feature = "epd-waveshare")]
+    #[rstest]
+    #[case(Foreground, Black, epd_waveshare::color::TriColor::Black)]
+    #[case(Background, Black, epd_waveshare::color::TriColor::Black)]
+    #[case(Foreground, White, epd_waveshare::color::TriColor::White)]
+    #[case(Background, White, epd_waveshare::color::TriColor::White)]
+    #[case(Foreground, Red, epd_waveshare::color::TriColor::Chromatic)]
+    #[case(Background, Red, epd_waveshare::color::TriColor::Chromatic)]
+    fn into_wavesharet_tricolor(
+        #[case] color_type: TermColorType,
+        #[case] color_from: Color,
+        #[case] color_into: epd_waveshare::color::TriColor,
+    ) {
+        let output: epd_waveshare::color::TriColor = themed(color_type, color_from).into();
+        assert_eq!(output, color_into);
+    }
+}
