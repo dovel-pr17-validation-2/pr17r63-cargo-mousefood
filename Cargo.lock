@@ -1537,9 +1537,9 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-hal"
-version = "0.47.0"
+version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52353908ed84c0290500557d7097ebf95985a6a9c98ea89cfb1ff9606ff7608f"
+checksum = "d5995e088a0fa48da266680c05cfdb2ce4893816a0cb9c8b5823fbef77f23407"
 dependencies = [
  "atomic-waker",
  "critical-section",
@@ -1561,12 +1561,14 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-svc"
-version = "0.53.0"
+version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80528df10e8ee316043f0a53bcbec3126a217168813afdcae11078a5f34e60c9"
+checksum = "0ae15224dbdf127cecf25fe21e336b4b4bd1c85d447cb17e47a3b139058525cf"
 dependencies = [
  "embassy-futures",
+ "embassy-sync 0.8.0",
  "embedded-hal-async",
+ "embedded-io-async 0.7.0",
  "embedded-svc",
  "embuild",
  "enumset",
@@ -1580,9 +1582,9 @@ dependencies = [
 
 [[package]]
 name = "esp-idf-sys"
-version = "0.38.1"
+version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77deab475cab0b375e20c7450b0d265f928480af712214c84e848df0f57c29f4"
+checksum = "dc72d57cd60c8734ecd3096fde21c27bd18387db7918763fc8c7ef68667ecf03"
 dependencies = [
  "anyhow",
  "build-time",
@@ -2368,9 +2370,9 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
 name = "libc"
-version = "0.2.183"
+version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d"
+checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
 name = "libloading"
